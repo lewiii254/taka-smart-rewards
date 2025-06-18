@@ -9,16 +9,239 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bins: {
+        Row: {
+          accepted_waste_types: string[] | null
+          capacity: number | null
+          created_at: string | null
+          fill_level: number | null
+          id: string
+          latitude: number | null
+          location: string
+          longitude: number | null
+          name: string
+          qr_code: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_waste_types?: string[] | null
+          capacity?: number | null
+          created_at?: string | null
+          fill_level?: number | null
+          id?: string
+          latitude?: number | null
+          location: string
+          longitude?: number | null
+          name: string
+          qr_code: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_waste_types?: string[] | null
+          capacity?: number | null
+          created_at?: string | null
+          fill_level?: number | null
+          id?: string
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          name?: string
+          qr_code?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          location: string | null
+          phone: string | null
+          total_points: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          location?: string | null
+          phone?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recycling_sessions: {
+        Row: {
+          bin_id: string
+          created_at: string | null
+          id: string
+          photo_url: string | null
+          points_earned: number
+          user_id: string
+          verified: boolean | null
+          waste_type: Database["public"]["Enums"]["waste_type"]
+        }
+        Insert: {
+          bin_id: string
+          created_at?: string | null
+          id?: string
+          photo_url?: string | null
+          points_earned?: number
+          user_id: string
+          verified?: boolean | null
+          waste_type: Database["public"]["Enums"]["waste_type"]
+        }
+        Update: {
+          bin_id?: string
+          created_at?: string | null
+          id?: string
+          photo_url?: string | null
+          points_earned?: number
+          user_id?: string
+          verified?: boolean | null
+          waste_type?: Database["public"]["Enums"]["waste_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recycling_sessions_bin_id_fkey"
+            columns: ["bin_id"]
+            isOneToOne: false
+            referencedRelation: "bins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          points_required: number
+          provider: string | null
+          title: string
+          type: string
+          validity_days: number | null
+          value: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points_required: number
+          provider?: string | null
+          title: string
+          type: string
+          validity_days?: number | null
+          value: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points_required?: number
+          provider?: string | null
+          title?: string
+          type?: string
+          validity_days?: number | null
+          value?: string
+        }
+        Relationships: []
+      }
+      user_rewards: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          points_spent: number
+          redemption_code: string | null
+          reward_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          points_spent: number
+          redemption_code?: string | null
+          reward_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          points_spent?: number
+          redemption_code?: string | null
+          reward_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          user_id: string
+          role_name: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "user"
+      waste_type: "plastic" | "metal" | "paper" | "glass" | "organic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +356,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "user"],
+      waste_type: ["plastic", "metal", "paper", "glass", "organic"],
+    },
   },
 } as const
