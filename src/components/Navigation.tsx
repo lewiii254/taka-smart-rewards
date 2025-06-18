@@ -7,7 +7,7 @@ const Navigation = () => {
   const location = useLocation();
   
   const navItems = [
-    { href: "/", icon: Home, label: "Home" },
+    { href: "/dashboard", icon: Home, label: "Home" },
     { href: "/locate", icon: MapPin, label: "Find Bins" },
     { href: "/scan", icon: QrCode, label: "Scan" },
     { href: "/rewards", icon: Gift, label: "Rewards" },
