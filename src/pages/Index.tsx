@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Coins, Recycle, MapPin, QrCode, LogOut, Users, TrendingUp } from "lucide-react";
+import { Trophy, Coins, Recycle, MapPin, QrCode, LogOut, Users, TrendingUp, Home, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +127,18 @@ const Index = () => {
       <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-6 rounded-b-3xl">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Welcome back{profile?.full_name ? `, ${profile.full_name}!` : '!'}</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <Link to="/">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-white hover:bg-white/20 px-2"
+                >
+                  <Home size={16} />
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold">Welcome back{profile?.full_name ? `, ${profile.full_name}!` : '!'}</h1>
+            </div>
             <p className="opacity-90">Keep making a difference</p>
           </div>
           <div className="flex items-center gap-4">
@@ -135,6 +146,15 @@ const Index = () => {
               <div className="text-3xl font-bold">{profile?.total_points?.toLocaleString() || 0}</div>
               <div className="text-sm opacity-90">Points</div>
             </div>
+            <Link to="/ai-assistant">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20"
+              >
+                <Sparkles size={20} />
+              </Button>
+            </Link>
             <Button 
               variant="ghost" 
               size="sm" 
