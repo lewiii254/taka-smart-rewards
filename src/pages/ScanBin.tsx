@@ -1,33 +1,83 @@
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QrCode, Camera, Upload, CheckCircle, Coins } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ScanBin = () => {
-  const [scanStep, setScanStep] = useState("scan"); // scan, photo, confirm, success
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [scanStep, setScanStep] = useState("scan");
   const [scannedBin, setScannedBin] = useState(null);
   const [selectedWasteType, setSelectedWasteType] = useState("");
   const [photoUploaded, setPhotoUploaded] = useState(false);
 
+  // Fetch bins for QR code simulation
+  const { data: bins = [] } = useQuery({
+    queryKey: ['bins'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bins')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Create recycling session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async ({ binId, wasteType, points }: { binId: string, wasteType: string, points: number }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('recycling_sessions')
+        .insert({
+          user_id: user.id,
+          bin_id: binId,
+          waste_type: wasteType.toLowerCase().replace(/\s+/g, '_') as any,
+          points_earned: points,
+          verified: true
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-count'] });
+    }
+  });
+
   const wasteTypes = [
-    { type: "Plastic Bottles", points: 50, color: "bg-blue-100 text-blue-700" },
-    { type: "Metal Cans", points: 30, color: "bg-gray-100 text-gray-700" },
-    { type: "Paper", points: 20, color: "bg-green-100 text-green-700" },
-    { type: "Glass", points: 40, color: "bg-purple-100 text-purple-700" },
+    { type: "Plastic Bottles", points: 50, color: "bg-blue-100 text-blue-700", dbType: "plastic" },
+    { type: "Metal Cans", points: 30, color: "bg-gray-100 text-gray-700", dbType: "metal" },
+    { type: "Paper", points: 20, color: "bg-green-100 text-green-700", dbType: "paper" },
+    { type: "Glass", points: 40, color: "bg-purple-100 text-purple-700", dbType: "glass" },
   ];
 
   const handleScanBin = () => {
-    // Simulate QR scan
+    // Simulate QR scan - pick a random active bin
+    const activeBins = bins.filter(bin => bin.status === 'active' && bin.fill_level < 90);
+    if (activeBins.length === 0) {
+      toast.error("No available bins nearby");
+      return;
+    }
+    
+    const randomBin = activeBins[Math.floor(Math.random() * activeBins.length)];
+    
     setTimeout(() => {
-      setScannedBin({
-        name: "Westlands Mall Bin #3",
-        location: "Westlands Shopping Centre",
-        id: "BIN001"
-      });
+      setScannedBin(randomBin);
       setScanStep("photo");
       toast.success("Bin scanned successfully!");
     }, 1500);
@@ -39,10 +89,25 @@ const ScanBin = () => {
     toast.success("Photo uploaded!");
   };
 
-  const handleConfirmRecycling = () => {
+  const handleConfirmRecycling = async () => {
+    if (!scannedBin || !selectedWasteType) return;
+    
     const selectedWaste = wasteTypes.find(w => w.type === selectedWasteType);
-    setScanStep("success");
-    toast.success(`Great job! You earned ${selectedWaste?.points} points!`);
+    if (!selectedWaste) return;
+
+    try {
+      await createSessionMutation.mutateAsync({
+        binId: scannedBin.id,
+        wasteType: selectedWaste.dbType,
+        points: selectedWaste.points
+      });
+      
+      setScanStep("success");
+      toast.success(`Great job! You earned ${selectedWaste.points} points!`);
+    } catch (error) {
+      toast.error("Failed to record recycling session");
+      console.error(error);
+    }
   };
 
   if (scanStep === "success") {
@@ -110,8 +175,13 @@ const ScanBin = () => {
                 </div>
               </div>
 
-              <Button onClick={handleScanBin} className="w-full" size="lg">
-                Simulate QR Scan
+              <Button 
+                onClick={handleScanBin} 
+                className="w-full" 
+                size="lg"
+                disabled={bins.length === 0}
+              >
+                {bins.length === 0 ? "Loading bins..." : "Simulate QR Scan"}
               </Button>
 
               <div className="text-center">
@@ -210,11 +280,11 @@ const ScanBin = () => {
 
               <Button 
                 onClick={handleConfirmRecycling}
-                disabled={!selectedWasteType}
+                disabled={!selectedWasteType || createSessionMutation.isPending}
                 className="w-full"
                 size="lg"
               >
-                Confirm Recycling
+                {createSessionMutation.isPending ? "Recording..." : "Confirm Recycling"}
               </Button>
             </CardContent>
           </Card>

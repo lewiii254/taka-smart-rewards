@@ -1,4 +1,5 @@
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,44 +7,137 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone, Wifi, Gift, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Rewards = () => {
-  const userPoints = 2450;
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const airtimeRewards = [
-    { amount: "Ksh 50", points: 500, provider: "Safaricom" },
-    { amount: "Ksh 100", points: 950, provider: "Safaricom" },
-    { amount: "Ksh 200", points: 1800, provider: "Safaricom" },
-    { amount: "Ksh 50", points: 500, provider: "Airtel" },
-    { amount: "Ksh 100", points: 950, provider: "Airtel" },
-  ];
+  // Fetch user profile to get current points
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
 
-  const dataRewards = [
-    { amount: "1GB", points: 800, provider: "Safaricom", validity: "7 days" },
-    { amount: "2GB", points: 1500, provider: "Safaricom", validity: "14 days" },
-    { amount: "5GB", points: 3500, provider: "Safaricom", validity: "30 days" },
-    { amount: "1GB", points: 800, provider: "Airtel", validity: "7 days" },
-  ];
-
-  const discountRewards = [
-    { title: "10% off EcoFriendly Store", points: 200, validity: "30 days", brand: "EcoKe" },
-    { title: "Ksh 100 off Green Products", points: 400, validity: "14 days", brand: "Zuri Health" },
-    { title: "Free delivery on orders", points: 300, validity: "7 days", brand: "Jumia" },
-    { title: "20% off Organic Food", points: 600, validity: "30 days", brand: "Zucchini" },
-  ];
-
-  const recentRedemptions = [
-    { date: "2 days ago", reward: "Ksh 50 Airtime", points: 500 },
-    { date: "1 week ago", reward: "1GB Data Bundle", points: 800 },
-    { date: "2 weeks ago", reward: "10% Discount Voucher", points: 200 },
-  ];
-
-  const handleRedeem = (rewardType, points, description) => {
-    if (userPoints >= points) {
-      toast.success(`Successfully redeemed ${description}!`);
-    } else {
-      toast.error(`Not enough points. You need ${points - userPoints} more points.`);
+  // Fetch available rewards
+  const { data: rewards = [] } = useQuery({
+    queryKey: ['rewards'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rewards')
+        .select('*')
+        .eq('active', true)
+        .order('points_required');
+      
+      if (error) throw error;
+      return data;
     }
+  });
+
+  // Fetch user's redemption history
+  const { data: redemptions = [] } = useQuery({
+    queryKey: ['user-redemptions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('user_rewards')
+        .select(`
+          *,
+          rewards (title, points_required)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Redeem reward mutation
+  const redeemMutation = useMutation({
+    mutationFn: async ({ rewardId, pointsRequired }: { rewardId: string, pointsRequired: number }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Generate redemption code
+      const redemptionCode = Math.random().toString(36).substring(2, 15).toUpperCase();
+      
+      const { data, error } = await supabase
+        .from('user_rewards')
+        .insert({
+          user_id: user.id,
+          reward_id: rewardId,
+          points_spent: pointsRequired,
+          redemption_code: redemptionCode,
+          status: 'processed'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Update user points
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          total_points: (profile?.total_points || 0) - pointsRequired 
+        })
+        .eq('id', user.id);
+      
+      if (updateError) throw updateError;
+      
+      return { ...data, redemption_code: redemptionCode };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-redemptions'] });
+      toast.success(`Reward redeemed! Code: ${data.redemption_code}`);
+    },
+    onError: (error) => {
+      toast.error('Failed to redeem reward: ' + error.message);
+    }
+  });
+
+  const userPoints = profile?.total_points || 0;
+
+  const handleRedeem = (reward: any) => {
+    if (userPoints >= reward.points_required) {
+      redeemMutation.mutate({ 
+        rewardId: reward.id, 
+        pointsRequired: reward.points_required 
+      });
+    } else {
+      toast.error(`Not enough points. You need ${reward.points_required - userPoints} more points.`);
+    }
+  };
+
+  // Group rewards by type
+  const airtimeRewards = rewards.filter(r => r.type === 'airtime');
+  const dataRewards = rewards.filter(r => r.type === 'data');
+  const discountRewards = rewards.filter(r => r.type === 'discount');
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    return `${Math.floor(diffInDays / 7)} weeks ago`;
   };
 
   return (
@@ -78,23 +172,27 @@ const Rewards = () => {
 
           <TabsContent value="airtime" className="space-y-4 mt-6">
             <div className="grid gap-4">
-              {airtimeRewards.map((reward, index) => (
-                <Card key={index} className="shadow-sm">
+              {airtimeRewards.map((reward) => (
+                <Card key={reward.id} className="shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-semibold text-lg">{reward.amount} Airtime</h3>
+                        <h3 className="font-semibold text-lg">{reward.title}</h3>
                         <p className="text-sm text-gray-600">{reward.provider}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {reward.points} points
+                        {reward.description && (
+                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
+                        )}
+                        <Badge variant="outline" className="mt-2">
+                          {reward.points_required} points
                         </Badge>
                       </div>
                       <Button
-                        onClick={() => handleRedeem("airtime", reward.points, reward.amount)}
-                        disabled={userPoints < reward.points}
-                        variant={userPoints >= reward.points ? "default" : "secondary"}
+                        onClick={() => handleRedeem(reward)}
+                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
+                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
                       >
-                        {userPoints >= reward.points ? "Redeem" : "Not Enough Points"}
+                        {redeemMutation.isPending ? "Redeeming..." :
+                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
                       </Button>
                     </div>
                   </CardContent>
@@ -105,24 +203,30 @@ const Rewards = () => {
 
           <TabsContent value="data" className="space-y-4 mt-6">
             <div className="grid gap-4">
-              {dataRewards.map((reward, index) => (
-                <Card key={index} className="shadow-sm">
+              {dataRewards.map((reward) => (
+                <Card key={reward.id} className="shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-semibold text-lg">{reward.amount} Data</h3>
+                        <h3 className="font-semibold text-lg">{reward.title}</h3>
                         <p className="text-sm text-gray-600">{reward.provider}</p>
-                        <p className="text-xs text-gray-500">Valid for {reward.validity}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {reward.points} points
+                        {reward.validity_days && (
+                          <p className="text-xs text-gray-500">Valid for {reward.validity_days} days</p>
+                        )}
+                        {reward.description && (
+                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
+                        )}
+                        <Badge variant="outline" className="mt-2">
+                          {reward.points_required} points
                         </Badge>
                       </div>
                       <Button
-                        onClick={() => handleRedeem("data", reward.points, reward.amount)}
-                        disabled={userPoints < reward.points}
-                        variant={userPoints >= reward.points ? "default" : "secondary"}
+                        onClick={() => handleRedeem(reward)}
+                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
+                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
                       >
-                        {userPoints >= reward.points ? "Redeem" : "Not Enough Points"}
+                        {redeemMutation.isPending ? "Redeeming..." :
+                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
                       </Button>
                     </div>
                   </CardContent>
@@ -133,24 +237,30 @@ const Rewards = () => {
 
           <TabsContent value="discounts" className="space-y-4 mt-6">
             <div className="grid gap-4">
-              {discountRewards.map((reward, index) => (
-                <Card key={index} className="shadow-sm">
+              {discountRewards.map((reward) => (
+                <Card key={reward.id} className="shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="font-semibold">{reward.title}</h3>
-                        <p className="text-sm text-gray-600">{reward.brand}</p>
-                        <p className="text-xs text-gray-500">Valid for {reward.validity}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {reward.points} points
+                        <p className="text-sm text-gray-600">{reward.provider}</p>
+                        {reward.validity_days && (
+                          <p className="text-xs text-gray-500">Valid for {reward.validity_days} days</p>
+                        )}
+                        {reward.description && (
+                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
+                        )}
+                        <Badge variant="outline" className="mt-2">
+                          {reward.points_required} points
                         </Badge>
                       </div>
                       <Button
-                        onClick={() => handleRedeem("discount", reward.points, reward.title)}
-                        disabled={userPoints < reward.points}
-                        variant={userPoints >= reward.points ? "default" : "secondary"}
+                        onClick={() => handleRedeem(reward)}
+                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
+                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
                       >
-                        {userPoints >= reward.points ? "Redeem" : "Not Enough Points"}
+                        {redeemMutation.isPending ? "Redeeming..." :
+                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
                       </Button>
                     </div>
                   </CardContent>
@@ -170,17 +280,30 @@ const Rewards = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentRedemptions.map((redemption, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                  <div>
-                    <p className="font-medium">{redemption.reward}</p>
-                    <p className="text-sm text-gray-600">{redemption.date}</p>
+              {redemptions.length > 0 ? (
+                redemptions.map((redemption) => (
+                  <div key={redemption.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                    <div>
+                      <p className="font-medium">{redemption.rewards?.title}</p>
+                      <p className="text-sm text-gray-600">{formatDate(redemption.created_at)}</p>
+                      {redemption.redemption_code && (
+                        <p className="text-xs text-green-600 font-mono">Code: {redemption.redemption_code}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary">
+                        -{redemption.points_spent} points
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1 capitalize">{redemption.status}</p>
+                    </div>
                   </div>
-                  <Badge variant="secondary">
-                    -{redemption.points} points
-                  </Badge>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  <p>No redemptions yet</p>
+                  <p className="text-sm">Start redeeming rewards to see your history!</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

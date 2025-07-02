@@ -1,52 +1,34 @@
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const BinLocator = () => {
   const [selectedBin, setSelectedBin] = useState(null);
   
-  const nearbyBins = [
-    {
-      id: 1,
-      name: "Westlands Mall",
-      distance: "0.2 km",
-      status: "active",
-      fillLevel: 30,
-      types: ["Plastic", "Metal", "Paper"],
-      coordinates: { lat: -1.2641, lng: 36.8078 }
-    },
-    {
-      id: 2,
-      name: "Sarit Centre",
-      distance: "0.5 km",
-      status: "full",
-      fillLevel: 95,
-      types: ["Plastic", "Paper"],
-      coordinates: { lat: -1.2615, lng: 36.8047 }
-    },
-    {
-      id: 3,
-      name: "Village Market",
-      distance: "0.8 km",
-      status: "active",
-      fillLevel: 45,
-      types: ["Plastic", "Metal", "Paper", "Glass"],
-      coordinates: { lat: -1.2505, lng: 36.8013 }
-    },
-    {
-      id: 4,
-      name: "Junction Mall",
-      distance: "1.2 km",
-      status: "maintenance",
-      fillLevel: 60,
-      types: ["Plastic"],
-      coordinates: { lat: -1.2364, lng: 36.8847 }
+  // Fetch bins from database
+  const { data: bins = [], isLoading } = useQuery({
+    queryKey: ['bins'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bins')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      
+      // Calculate distances (mock for now)
+      return data.map((bin, index) => ({
+        ...bin,
+        distance: `${(0.2 + index * 0.3).toFixed(1)} km`
+      }));
     }
-  ];
+  });
 
   const getStatusIcon = (status, fillLevel) => {
     if (status === "maintenance") return <AlertTriangle className="text-orange-500" size={16} />;
@@ -59,6 +41,21 @@ const BinLocator = () => {
     if (fillLevel > 80) return "bg-red-100 text-red-700";
     return "bg-green-100 text-green-700";
   };
+
+  const getStatusText = (status, fillLevel) => {
+    if (status === "maintenance") return "Maintenance";
+    if (fillLevel > 90) return "Full";
+    if (fillLevel > 80) return "Nearly Full";
+    return "Available";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -74,7 +71,7 @@ const BinLocator = () => {
           <div className="text-center">
             <MapPin className="mx-auto mb-2 text-green-600" size={48} />
             <p className="text-gray-600">Interactive Map</p>
-            <p className="text-sm text-gray-500">Showing {nearbyBins.length} nearby bins</p>
+            <p className="text-sm text-gray-500">Showing {bins.length} nearby bins</p>
           </div>
         </div>
         
@@ -92,9 +89,9 @@ const BinLocator = () => {
 
       {/* Bins List */}
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Nearby Bins ({nearbyBins.length})</h2>
+        <h2 className="text-xl font-semibold mb-4">Nearby Bins ({bins.length})</h2>
         <div className="space-y-4">
-          {nearbyBins.map((bin) => (
+          {bins.map((bin) => (
             <Card key={bin.id} className="shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
@@ -104,13 +101,13 @@ const BinLocator = () => {
                       <MapPin size={14} />
                       <span>{bin.distance} away</span>
                     </div>
+                    <p className="text-sm text-gray-500 mt-1">{bin.location}</p>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {getStatusIcon(bin.status, bin.fillLevel)}
-                    <Badge className={getStatusColor(bin.status, bin.fillLevel)}>
-                      {bin.status === "maintenance" ? "Maintenance" :
-                       bin.fillLevel > 80 ? "Nearly Full" : "Available"}
+                    {getStatusIcon(bin.status, bin.fill_level)}
+                    <Badge className={getStatusColor(bin.status, bin.fill_level)}>
+                      {getStatusText(bin.status, bin.fill_level)}
                     </Badge>
                   </div>
                 </div>
@@ -119,15 +116,15 @@ const BinLocator = () => {
                 <div className="mb-3">
                   <div className="flex justify-between text-sm mb-1">
                     <span>Fill Level</span>
-                    <span>{bin.fillLevel}%</span>
+                    <span>{bin.fill_level}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full ${
-                        bin.fillLevel > 80 ? 'bg-red-500' : 
-                        bin.fillLevel > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                        bin.fill_level > 80 ? 'bg-red-500' : 
+                        bin.fill_level > 50 ? 'bg-yellow-500' : 'bg-green-500'
                       }`}
-                      style={{ width: `${bin.fillLevel}%` }}
+                      style={{ width: `${bin.fill_level}%` }}
                     ></div>
                   </div>
                 </div>
@@ -136,8 +133,8 @@ const BinLocator = () => {
                 <div className="mb-3">
                   <p className="text-sm text-gray-600 mb-2">Accepts:</p>
                   <div className="flex flex-wrap gap-2">
-                    {bin.types.map((type) => (
-                      <Badge key={type} variant="outline" className="text-xs">
+                    {bin.accepted_waste_types?.map((type) => (
+                      <Badge key={type} variant="outline" className="text-xs capitalize">
                         {type}
                       </Badge>
                     ))}
@@ -147,11 +144,11 @@ const BinLocator = () => {
                 {/* Action Button */}
                 <Button 
                   className="w-full mt-3"
-                  variant={bin.status === "maintenance" || bin.fillLevel > 90 ? "secondary" : "default"}
-                  disabled={bin.status === "maintenance" || bin.fillLevel > 90}
+                  variant={bin.status === "maintenance" || bin.fill_level > 90 ? "secondary" : "default"}
+                  disabled={bin.status === "maintenance" || bin.fill_level > 90}
                 >
                   {bin.status === "maintenance" ? "Under Maintenance" :
-                   bin.fillLevel > 90 ? "Bin Full" : "Get Directions"}
+                   bin.fill_level > 90 ? "Bin Full" : "Get Directions"}
                 </Button>
               </CardContent>
             </Card>
