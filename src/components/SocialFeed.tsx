@@ -52,29 +52,40 @@ const SocialFeed = () => {
   const { data: feedData = [] } = useQuery({
     queryKey: ['social-feed'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get recycling sessions
+      const { data: sessions, error: sessionsError } = await supabase
         .from('recycling_sessions')
-        .select(`
-          *,
-          profiles!inner(full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
       
-      if (error) throw error;
+      if (sessionsError) throw sessionsError;
+      if (!sessions) return [];
+
+      // Then get user profiles for the sessions
+      const userIds = [...new Set(sessions.map(session => session.user_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
       
-      // Generate mock social activities
-      return data?.map(session => ({
+      if (profilesError) throw profilesError;
+
+      // Create a map of user IDs to names
+      const userMap = new Map(profiles?.map(profile => [profile.id, profile.full_name]) || []);
+      
+      // Generate social activities
+      return sessions.map(session => ({
         id: session.id,
         type: 'recycling' as const,
-        user: session.profiles?.full_name || 'Anonymous User',
+        user: userMap.get(session.user_id) || 'Anonymous User',
         action: `recycled ${session.waste_type}`,
         points: session.points_earned,
         time: session.created_at,
         wasteType: session.waste_type,
         likes: Math.floor(Math.random() * 15) + 1,
         comments: Math.floor(Math.random() * 8),
-      })) || [];
+      }));
     }
   });
 
