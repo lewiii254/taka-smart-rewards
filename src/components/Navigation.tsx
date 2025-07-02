@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, MapPin, QrCode, Gift, User, Sparkles } from "lucide-react";
+import { Home, MapPin, QrCode, Gift, Users, Sparkles } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
@@ -10,8 +10,8 @@ const Navigation = () => {
     { href: "/dashboard", icon: Home, label: "Home" },
     { href: "/locate", icon: MapPin, label: "Find Bins" },
     { href: "/scan", icon: QrCode, label: "Scan" },
+    { href: "/community", icon: Users, label: "Community" },
     { href: "/rewards", icon: Gift, label: "Rewards" },
-    { href: "/ai-assistant", icon: Sparkles, label: "AI Helper" },
   ];
 
   return (

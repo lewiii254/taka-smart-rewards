@@ -230,6 +230,28 @@ const Index = () => {
           </Link>
         </div>
 
+        {/* New Community Quick Link */}
+        <div className="mb-6">
+          <Link to="/community">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-100 p-2 rounded-full">
+                      <Users className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-purple-700">Join the Community</h3>
+                      <p className="text-sm text-purple-600">Share achievements, earn badges, see your impact</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-purple-600 text-white">New!</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Tabs for Activity and Leaderboard */}
         <Tabs defaultValue="activity" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

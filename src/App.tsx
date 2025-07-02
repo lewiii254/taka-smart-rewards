@@ -13,6 +13,7 @@ import BinLocator from "./pages/BinLocator";
 import ScanBin from "./pages/ScanBin";
 import Rewards from "./pages/Rewards";
 import Profile from "./pages/Profile";
+import Community from "./pages/Community";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminBins from "./pages/AdminBins";
 import AdminUsers from "./pages/AdminUsers";
@@ -54,6 +55,11 @@ const App = () => {
               <Route path="/scan" element={
                 <ProtectedRoute>
                   <ScanBin />
+                </ProtectedRoute>
+              } />
+              <Route path="/community" element={
+                <ProtectedRoute>
+                  <Community />
                 </ProtectedRoute>
               } />
               <Route path="/rewards" element={
