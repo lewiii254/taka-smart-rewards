@@ -39,16 +39,17 @@ const ImpactCalculator = () => {
     let totalWater = 0;
     let totalEnergy = 0;
 
-    const wasteCounts = {};
+    const wasteCounts: Record<string, number> = {};
     
     sessions.forEach(session => {
       const wasteType = session.waste_type;
       wasteCounts[wasteType] = (wasteCounts[wasteType] || 0) + 1;
       
-      if (impactFactors[wasteType]) {
-        totalCO2 += impactFactors[wasteType].co2;
-        totalWater += impactFactors[wasteType].water;
-        totalEnergy += impactFactors[wasteType].energy;
+      if (impactFactors[wasteType as keyof typeof impactFactors]) {
+        const factors = impactFactors[wasteType as keyof typeof impactFactors];
+        totalCO2 += factors.co2;
+        totalWater += factors.water;
+        totalEnergy += factors.energy;
       }
     });
 
@@ -130,7 +131,7 @@ const ImpactCalculator = () => {
             <div className="flex flex-wrap gap-2">
               {Object.entries(impact.wasteCounts).map(([type, count]) => (
                 <Badge key={type} variant="outline" className="capitalize">
-                  {type}: {count} items
+                  {type}: {count as number} items
                 </Badge>
               ))}
             </div>

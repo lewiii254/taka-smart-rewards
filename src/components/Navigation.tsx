@@ -11,7 +11,7 @@ const Navigation = () => {
     { href: "/locate", icon: MapPin, label: "Find Bins" },
     { href: "/scan", icon: QrCode, label: "Scan" },
     { href: "/community", icon: Users, label: "Community" },
-    { href: "/rewards", icon: Gift, label: "Rewards" },
+    { href: "/ai-assistant", icon: Sparkles, label: "AI Help" },
   ];
 
   return (

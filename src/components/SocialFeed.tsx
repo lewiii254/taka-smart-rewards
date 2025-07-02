@@ -9,8 +9,44 @@ import { Heart, MessageCircle, Share, Trophy, Recycle, Leaf } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
+type RecyclingPost = {
+  id: string;
+  type: 'recycling';
+  user: string;
+  action: string;
+  points: number;
+  time: string;
+  wasteType: string;
+  likes: number;
+  comments: number;
+};
+
+type AchievementPost = {
+  id: string;
+  type: 'achievement';
+  user: string;
+  action: string;
+  badge: string;
+  time: string;
+  likes: number;
+  comments: number;
+};
+
+type MilestonePost = {
+  id: string;
+  type: 'milestone';
+  user: string;
+  action: string;
+  points: number;
+  time: string;
+  likes: number;
+  comments: number;
+};
+
+type SocialPost = RecyclingPost | AchievementPost | MilestonePost;
+
 const SocialFeed = () => {
-  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [likedPosts, setLikedPosts] = useState(new Set<string>());
 
   // Fetch recent recycling sessions from all users for social feed
   const { data: feedData = [] } = useQuery({
@@ -20,7 +56,7 @@ const SocialFeed = () => {
         .from('recycling_sessions')
         .select(`
           *,
-          profiles!recycling_sessions_user_id_fkey (full_name)
+          profiles!inner(full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -30,7 +66,7 @@ const SocialFeed = () => {
       // Generate mock social activities
       return data?.map(session => ({
         id: session.id,
-        type: 'recycling',
+        type: 'recycling' as const,
         user: session.profiles?.full_name || 'Anonymous User',
         action: `recycled ${session.waste_type}`,
         points: session.points_earned,
@@ -43,7 +79,7 @@ const SocialFeed = () => {
   });
 
   // Generate some achievement posts
-  const achievementPosts = [
+  const achievementPosts: SocialPost[] = [
     {
       id: 'ach-1',
       type: 'achievement',
@@ -66,11 +102,11 @@ const SocialFeed = () => {
     }
   ];
 
-  const allPosts = [...feedData, ...achievementPosts].sort((a, b) => 
+  const allPosts: SocialPost[] = [...feedData, ...achievementPosts].sort((a, b) => 
     new Date(b.time).getTime() - new Date(a.time).getTime()
   );
 
-  const handleLike = (postId) => {
+  const handleLike = (postId: string) => {
     setLikedPosts(prev => {
       const newSet = new Set(prev);
       if (newSet.has(postId)) {
@@ -82,14 +118,14 @@ const SocialFeed = () => {
     });
   };
 
-  const getPostIcon = (type, wasteType) => {
+  const getPostIcon = (type: string, wasteType?: string) => {
     if (type === 'achievement') return <Trophy className="w-5 h-5 text-yellow-600" />;
     if (type === 'milestone') return <Trophy className="w-5 h-5 text-purple-600" />;
     return <Recycle className="w-5 h-5 text-green-600" />;
   };
 
-  const getWasteTypeColor = (wasteType) => {
-    const colors = {
+  const getWasteTypeColor = (wasteType: string) => {
+    const colors: Record<string, string> = {
       plastic: 'bg-blue-100 text-blue-700',
       paper: 'bg-green-100 text-green-700',
       metal: 'bg-gray-100 text-gray-700',
@@ -99,7 +135,7 @@ const SocialFeed = () => {
     return colors[wasteType] || 'bg-gray-100 text-gray-700';
   };
 
-  const getInitials = (name) => {
+  const getInitials = (name: string) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
   };
 
@@ -138,23 +174,23 @@ const SocialFeed = () => {
                 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    {getPostIcon(post.type, post.wasteType)}
+                    {getPostIcon(post.type, post.type === 'recycling' ? (post as RecyclingPost).wasteType : undefined)}
                     <span className="font-medium">{post.user}</span>
                     <span className="text-gray-600">{post.action}</span>
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
-                    {post.wasteType && (
-                      <Badge className={getWasteTypeColor(post.wasteType)} variant="outline">
-                        {post.wasteType}
+                    {post.type === 'recycling' && (
+                      <Badge className={getWasteTypeColor((post as RecyclingPost).wasteType)} variant="outline">
+                        {(post as RecyclingPost).wasteType}
                       </Badge>
                     )}
-                    {post.badge && (
+                    {post.type === 'achievement' && (
                       <Badge className="bg-yellow-100 text-yellow-700" variant="outline">
-                        🏆 {post.badge}
+                        🏆 {(post as AchievementPost).badge}
                       </Badge>
                     )}
-                    {post.points && (
+                    {'points' in post && post.points && (
                       <Badge className="bg-green-100 text-green-700" variant="outline">
                         +{post.points} points
                       </Badge>
