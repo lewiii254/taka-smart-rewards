@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share, Trophy, Recycle, Leaf } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Heart, MessageCircle, Share, Trophy, Recycle, Leaf, Camera, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
@@ -19,6 +20,8 @@ type RecyclingPost = {
   wasteType: string;
   likes: number;
   comments: number;
+  photo_url?: string;
+  location?: string;
 };
 
 type AchievementPost = {
@@ -85,6 +88,8 @@ const SocialFeed = () => {
         wasteType: session.waste_type,
         likes: Math.floor(Math.random() * 15) + 1,
         comments: Math.floor(Math.random() * 8),
+        photo_url: session.photo_url,
+        location: `Recycling Station ${Math.floor(Math.random() * 20) + 1}`
       }));
     }
   });
@@ -192,9 +197,17 @@ const SocialFeed = () => {
                   
                   <div className="flex items-center gap-2 mb-2">
                     {post.type === 'recycling' && (
-                      <Badge className={getWasteTypeColor((post as RecyclingPost).wasteType)} variant="outline">
-                        {(post as RecyclingPost).wasteType}
-                      </Badge>
+                      <>
+                        <Badge className={getWasteTypeColor((post as RecyclingPost).wasteType)} variant="outline">
+                          {(post as RecyclingPost).wasteType}
+                        </Badge>
+                        {(post as RecyclingPost).location && (
+                          <Badge className="bg-gray-100 text-gray-600" variant="outline">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {(post as RecyclingPost).location}
+                          </Badge>
+                        )}
+                      </>
                     )}
                     {post.type === 'achievement' && (
                       <Badge className="bg-yellow-100 text-yellow-700" variant="outline">
@@ -207,6 +220,31 @@ const SocialFeed = () => {
                       </Badge>
                     )}
                   </div>
+
+                  {/* Photo display for recycling posts */}
+                  {post.type === 'recycling' && (post as RecyclingPost).photo_url && (
+                    <div className="mb-3">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="relative cursor-pointer rounded-lg overflow-hidden">
+                            <img
+                              src={(post as RecyclingPost).photo_url}
+                              alt="Recycling activity"
+                              className="w-full h-48 object-cover hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all" />
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <img
+                            src={(post as RecyclingPost).photo_url}
+                            alt="Recycling activity"
+                            className="w-full h-auto rounded-lg"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
                   
                   <div className="text-sm text-gray-500 mb-3">
                     {formatDistanceToNow(new Date(post.time), { addSuffix: true })}
