@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,12 +25,34 @@ import WastePickupReminders from "@/components/WastePickupReminders";
 import RouteOptimization from "@/components/RouteOptimization";
 import WeatherIntegration from "@/components/WeatherIntegration";
 
+interface Profile {
+  id: string;
+  total_points: number;
+  created_at: string;
+  updated_at: string;
+  full_name: string | null;
+  phone: string | null;
+  location: string | null;
+  email: string | null;
+}
+
+interface RecyclingSession {
+  id: string;
+  user_id: string;
+  bin_id: string;
+  waste_type: string;
+  points_earned: number;
+  verified: boolean;
+  created_at: string;
+  photo_url: string | null;
+}
+
 const Index = () => {
   const { user } = useAuth();
 
-  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery(
-    ['profile'],
-    async () => {
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
+    queryKey: ['profile'],
+    queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -42,14 +65,12 @@ const Index = () => {
       }
       return data;
     },
-    {
-      enabled: !!user?.id,
-    }
-  );
+    enabled: !!user?.id,
+  });
 
-  const { data: recyclingSessions, isLoading: sessionsLoading, error: sessionsError } = useQuery(
-    ['recyclingSessions'],
-    async () => {
+  const { data: recyclingSessions, isLoading: sessionsLoading, error: sessionsError } = useQuery({
+    queryKey: ['recyclingSessions'],
+    queryFn: async (): Promise<RecyclingSession[]> => {
       const { data, error } = await supabase
         .from('recycling_sessions')
         .select('*')
@@ -61,12 +82,10 @@ const Index = () => {
         console.error("Error fetching recycling sessions:", error);
         throw new Error(error.message);
       }
-      return data;
+      return data || [];
     },
-    {
-      enabled: !!user?.id,
-    }
-  );
+    enabled: !!user?.id,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
