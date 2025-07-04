@@ -216,22 +216,7 @@ npm run lint
 - Implement **proper error handling**
 
 ## 🚀 Deployment
-
-### 📤 Publishing Your App
-
-1. **🔗 Connect to Lovable**
-   - Open your project in Lovable
-   - Click "Share" → "Publish"
-
-2. **🌐 Custom Domain** (Premium)
-   - Go to Project Settings → Domains
-   - Add your custom domain
-   - Follow DNS configuration steps
-
-3. **📱 Mobile Optimization**
-   - App is fully responsive
-   - PWA-ready for mobile installation
-   - Optimized for touch interactions
+### [on Vercel🚀](https://taka-smart-rewards.vercel.app/dashboard)
 
 ## 🤝 Contributing
 
@@ -272,10 +257,6 @@ We welcome contributions! 🎉
 - **📚 Educational Programs**
 - **🏭 Industry Integration**
 
-## 🆘 Support & Help
-
-### 📚 Documentation
-- **🎥 Video Tutorials**: [YouTube Playlist](https://www.youtube.com/watch?v=9KHLTZaJcR8&list=PLbVHz4urQBZkJiAWdG8HWoJTdgEysigIO)
 
 ### 🔧 Troubleshooting
 - Check console for errors
