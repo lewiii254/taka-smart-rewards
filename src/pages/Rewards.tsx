@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Smartphone, Wifi, Gift, Clock } from "lucide-react";
+import { Smartphone, Wifi, Gift, Clock, Zap, Utensils, GraduationCap, Car } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -128,6 +128,8 @@ const Rewards = () => {
   const airtimeRewards = rewards.filter(r => r.type === 'airtime');
   const dataRewards = rewards.filter(r => r.type === 'data');
   const discountRewards = rewards.filter(r => r.type === 'discount');
+  const electronicsRewards = rewards.filter(r => r.type === 'electronics');
+  const ecoRewards = rewards.filter(r => r.type === 'eco');
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -140,63 +142,82 @@ const Rewards = () => {
     return `${Math.floor(diffInDays / 7)} weeks ago`;
   };
 
+  const RewardCard = ({ reward }: { reward: any }) => (
+    <Card key={reward.id} className="shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-semibold text-lg">{reward.title}</h3>
+            <p className="text-sm text-gray-600">{reward.provider}</p>
+            {reward.validity_days && (
+              <p className="text-xs text-gray-500">Valid for {reward.validity_days} days</p>
+            )}
+            {reward.description && (
+              <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
+            )}
+            <Badge variant="outline" className="mt-2">
+              {reward.points_required.toLocaleString()} points
+            </Badge>
+          </div>
+          <Button
+            onClick={() => handleRedeem(reward)}
+            disabled={userPoints < reward.points_required || redeemMutation.isPending}
+            variant={userPoints >= reward.points_required ? "default" : "secondary"}
+            className={userPoints >= reward.points_required ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            {redeemMutation.isPending ? "Redeeming..." :
+             userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-6">
-        <h1 className="text-2xl font-bold">Rewards</h1>
+        <h1 className="text-2xl font-bold">🎁 Rewards Store</h1>
         <div className="flex items-center gap-2 mt-2">
           <span>Available Points:</span>
           <Badge className="bg-white text-green-600 text-lg px-3 py-1">
             {userPoints.toLocaleString()}
           </Badge>
         </div>
+        <p className="text-sm opacity-90 mt-1">
+          {electronicsRewards.length + ecoRewards.length + discountRewards.length + airtimeRewards.length + dataRewards.length} rewards available!
+        </p>
       </div>
 
       <div className="p-6">
         <Tabs defaultValue="airtime" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="airtime" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="airtime" className="flex flex-col items-center gap-1 text-xs">
               <Smartphone size={16} />
               Airtime
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
+            <TabsTrigger value="data" className="flex flex-col items-center gap-1 text-xs">
               <Wifi size={16} />
               Data
             </TabsTrigger>
-            <TabsTrigger value="discounts" className="flex items-center gap-2">
+            <TabsTrigger value="discounts" className="flex flex-col items-center gap-1 text-xs">
               <Gift size={16} />
               Discounts
+            </TabsTrigger>
+            <TabsTrigger value="electronics" className="flex flex-col items-center gap-1 text-xs">
+              <Zap size={16} />
+              Electronics
+            </TabsTrigger>
+            <TabsTrigger value="eco" className="flex flex-col items-center gap-1 text-xs">
+              <Utensils size={16} />
+              Eco
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="airtime" className="space-y-4 mt-6">
             <div className="grid gap-4">
               {airtimeRewards.map((reward) => (
-                <Card key={reward.id} className="shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold text-lg">{reward.title}</h3>
-                        <p className="text-sm text-gray-600">{reward.provider}</p>
-                        {reward.description && (
-                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
-                        )}
-                        <Badge variant="outline" className="mt-2">
-                          {reward.points_required} points
-                        </Badge>
-                      </div>
-                      <Button
-                        onClick={() => handleRedeem(reward)}
-                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
-                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
-                      >
-                        {redeemMutation.isPending ? "Redeeming..." :
-                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RewardCard key={reward.id} reward={reward} />
               ))}
             </div>
           </TabsContent>
@@ -204,33 +225,7 @@ const Rewards = () => {
           <TabsContent value="data" className="space-y-4 mt-6">
             <div className="grid gap-4">
               {dataRewards.map((reward) => (
-                <Card key={reward.id} className="shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold text-lg">{reward.title}</h3>
-                        <p className="text-sm text-gray-600">{reward.provider}</p>
-                        {reward.validity_days && (
-                          <p className="text-xs text-gray-500">Valid for {reward.validity_days} days</p>
-                        )}
-                        {reward.description && (
-                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
-                        )}
-                        <Badge variant="outline" className="mt-2">
-                          {reward.points_required} points
-                        </Badge>
-                      </div>
-                      <Button
-                        onClick={() => handleRedeem(reward)}
-                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
-                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
-                      >
-                        {redeemMutation.isPending ? "Redeeming..." :
-                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RewardCard key={reward.id} reward={reward} />
               ))}
             </div>
           </TabsContent>
@@ -238,33 +233,23 @@ const Rewards = () => {
           <TabsContent value="discounts" className="space-y-4 mt-6">
             <div className="grid gap-4">
               {discountRewards.map((reward) => (
-                <Card key={reward.id} className="shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold">{reward.title}</h3>
-                        <p className="text-sm text-gray-600">{reward.provider}</p>
-                        {reward.validity_days && (
-                          <p className="text-xs text-gray-500">Valid for {reward.validity_days} days</p>
-                        )}
-                        {reward.description && (
-                          <p className="text-xs text-gray-500 mt-1">{reward.description}</p>
-                        )}
-                        <Badge variant="outline" className="mt-2">
-                          {reward.points_required} points
-                        </Badge>
-                      </div>
-                      <Button
-                        onClick={() => handleRedeem(reward)}
-                        disabled={userPoints < reward.points_required || redeemMutation.isPending}
-                        variant={userPoints >= reward.points_required ? "default" : "secondary"}
-                      >
-                        {redeemMutation.isPending ? "Redeeming..." :
-                         userPoints >= reward.points_required ? "Redeem" : "Not Enough Points"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RewardCard key={reward.id} reward={reward} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="electronics" className="space-y-4 mt-6">
+            <div className="grid gap-4">
+              {electronicsRewards.map((reward) => (
+                <RewardCard key={reward.id} reward={reward} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="eco" className="space-y-4 mt-6">
+            <div className="grid gap-4">
+              {ecoRewards.map((reward) => (
+                <RewardCard key={reward.id} reward={reward} />
               ))}
             </div>
           </TabsContent>
@@ -292,7 +277,7 @@ const Rewards = () => {
                     </div>
                     <div className="text-right">
                       <Badge variant="secondary">
-                        -{redemption.points_spent} points
+                        -{redemption.points_spent.toLocaleString()} points
                       </Badge>
                       <p className="text-xs text-gray-500 mt-1 capitalize">{redemption.status}</p>
                     </div>

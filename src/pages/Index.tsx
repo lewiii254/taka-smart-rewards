@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,8 @@ import {
   Leaf,
   Globe,
   Route,
-  Cloud
+  Cloud,
+  Crown
 } from "lucide-react";
 import EcoTips from "@/components/EcoTips";
 import SustainabilityNews from "@/components/SustainabilityNews";
@@ -24,6 +26,7 @@ import WastePickupReminders from "@/components/WastePickupReminders";
 import RouteOptimization from "@/components/RouteOptimization";
 import WeatherIntegration from "@/components/WeatherIntegration";
 import ImpactCalculator from "@/components/ImpactCalculator";
+import Leaderboard from "@/components/Leaderboard";
 
 interface Profile {
   id: string;
@@ -87,18 +90,44 @@ const Index = () => {
     enabled: !!user?.id,
   });
 
+  // Get user's leaderboard position
+  const { data: userRank } = useQuery({
+    queryKey: ['user-rank', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, total_points')
+        .order('total_points', { ascending: false });
+
+      if (error) throw error;
+      
+      const userIndex = data.findIndex(p => p.id === user.id);
+      return userIndex !== -1 ? userIndex + 1 : null;
+    },
+    enabled: !!user?.id,
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
         <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
         <p className="opacity-90">Ready to make a positive impact today?</p>
+        {userRank && (
+          <div className="flex items-center gap-2 mt-2">
+            <Crown className="w-4 h-4" />
+            <span className="text-sm">You're ranked #{userRank} on the leaderboard!</span>
+          </div>
+        )}
       </div>
 
       <div className="p-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="text-xs">Rankings</TabsTrigger>
             <TabsTrigger value="eco-tips" className="text-xs">Eco Tips</TabsTrigger>
             <TabsTrigger value="smart" className="text-xs">Smart</TabsTrigger>
             <TabsTrigger value="news" className="text-xs">News</TabsTrigger>
@@ -128,17 +157,45 @@ const Index = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Rewards Available</CardTitle>
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Leaderboard Rank
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-semibold">3</div>
-                  <p className="text-gray-500 text-sm">Unlock more rewards</p>
+                  <div className="text-2xl font-semibold">#{userRank || '--'}</div>
+                  <p className="text-gray-500 text-sm">Among all users</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Add Impact Calculator */}
             <ImpactCalculator />
+
+            {/* Quick Leaderboard Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    Top Recyclers
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const tabTrigger = document.querySelector('[value="leaderboard"]') as HTMLElement;
+                      tabTrigger?.click();
+                    }}
+                  >
+                    View Full Rankings
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Leaderboard limit={5} />
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
@@ -167,6 +224,19 @@ const Index = () => {
             
             {/* Add EcoTips to overview */}
             <EcoTips />
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">🏆 Leaderboard</h2>
+              <p className="text-gray-600">See how you stack up against other eco-warriors!</p>
+              {userRank && (
+                <Badge className="mt-2 bg-green-100 text-green-800">
+                  Your Rank: #{userRank}
+                </Badge>
+              )}
+            </div>
+            <Leaderboard />
           </TabsContent>
 
           <TabsContent value="eco-tips" className="space-y-6">
