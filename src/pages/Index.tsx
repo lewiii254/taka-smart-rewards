@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import SustainabilityNews from "@/components/SustainabilityNews";
 import WastePickupReminders from "@/components/WastePickupReminders";
 import RouteOptimization from "@/components/RouteOptimization";
 import WeatherIntegration from "@/components/WeatherIntegration";
+import ImpactCalculator from "@/components/ImpactCalculator";
 
 interface Profile {
   id: string;
@@ -136,6 +136,9 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Add Impact Calculator */}
+            <ImpactCalculator />
 
             <Card>
               <CardHeader>
