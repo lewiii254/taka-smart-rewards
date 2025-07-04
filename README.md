@@ -1,7 +1,6 @@
 
 # 🌱 TakaSmart - Smart Recycling Platform 🌍
 
-[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-ff69b4.svg)](https://lovable.dev)
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Latest-blue.svg)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-Latest-38B2AC.svg)](https://tailwindcss.com/)
@@ -13,7 +12,7 @@ TakaSmart is a revolutionary **smart recycling platform** that gamifies waste ma
 
 ## 📱 Live Demo
 
-**URL**: [https://lovable.dev/projects/0330321e-21a0-478d-870d-1ad3ea2007fb](https://lovable.dev/projects/0330321e-21a0-478d-870d-1ad3ea2007fb)
+[**URL**:](https://taka-smart-rewards.vercel.app/)
 
 ## ✨ Key Features
 
@@ -243,12 +242,8 @@ We welcome contributions! 🎉
 ## 🆘 Support & Help
 
 ### 📚 Documentation
-- **📖 Lovable Docs**: [docs.lovable.dev](https://docs.lovable.dev/)
 - **🎥 Video Tutorials**: [YouTube Playlist](https://www.youtube.com/watch?v=9KHLTZaJcR8&list=PLbVHz4urQBZkJiAWdG8HWoJTdgEysigIO)
 
-### 💬 Community
-- **💭 Discord**: [Lovable Community](https://discord.com/channels/1119885301872070706/1280461670979993613)
-- **📧 Email**: Contact support through Lovable platform
 
 ### 🔧 Troubleshooting
 - Check console for errors
@@ -258,11 +253,8 @@ We welcome contributions! 🎉
 
 ## 📄 License
 
-This project is built with **Lovable** and follows their terms of service.
-
 ## 🙏 Acknowledgments
 
-- **🌟 Lovable Team** - For the amazing development platform
 - **🎨 Shadcn** - For beautiful UI components
 - **🟢 Supabase** - For powerful backend services
 - **🌍 Environmental Community** - For inspiration and support
@@ -282,8 +274,7 @@ This project is built with **Lovable** and follows their terms of service.
 **TakaSmart** - Making recycling rewarding, one scan at a time! 
 
 ### 🚀 Ready to make a difference? 
-[Start your recycling journey today!](https://lovable.dev/projects/0330321e-21a0-478d-870d-1ad3ea2007fb)
+[Start your recycling journey today!](https://taka-smart-rewards.vercel.app/)
 
 ---
-
-*Built with [Lovable](https://lovable.dev) 💖*
+*
