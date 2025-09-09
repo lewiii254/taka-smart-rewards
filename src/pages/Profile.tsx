@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Phone, Mail, MapPin, Trophy, Recycle, Calendar, Settings, Edit2, Save, X } from "lucide-react";
+import { User, Phone, Mail, MapPin, Trophy, Recycle, Calendar, Settings, Edit2, Save, X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -120,6 +120,15 @@ const Profile = () => {
 
   const getInitials = (name: string) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Logged out successfully!');
+    } catch (error) {
+      toast.error('Failed to logout');
+    }
   };
 
   if (!profile) {
@@ -275,6 +284,26 @@ const Profile = () => {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Settings & Account Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings size={20} />
+              Account Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut size={16} className="mr-2" />
+              Sign Out
+            </Button>
           </CardContent>
         </Card>
       </div>
