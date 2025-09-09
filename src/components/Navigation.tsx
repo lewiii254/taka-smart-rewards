@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, MapPin, QrCode, Gift, Users, Sparkles, User, MoreHorizontal } from "lucide-react";
+import { Home, MapPin, QrCode, Gift, Users, Sparkles, User, MoreHorizontal, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 const Navigation = () => {
@@ -16,6 +16,7 @@ const Navigation = () => {
   ];
 
   const secondaryNavItems = [
+    { href: "/", icon: ArrowLeft, label: "Landing" },
     { href: "/community", icon: Users, label: "Community" },
     { href: "/profile", icon: User, label: "Profile" },
     { href: "/ai-assistant", icon: Sparkles, label: "AI Help" },
@@ -59,7 +60,7 @@ const Navigation = () => {
         {/* Extended menu when "More" is active */}
         {showMore && (
           <div className="border-t border-gray-100 pt-2 pb-1">
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-4 gap-1">
               {secondaryNavItems.map(({ href, icon: Icon, label }) => (
                 <Link key={href} to={href} className="flex justify-center">
                   <Button
